@@ -3,9 +3,13 @@
 
 #include <iostream>
 #include "maze.h"
+#include "solver.h"
 int main()
 {
-    std::cout << "Hello World!\n";
+    maze* one = new maze();
+    solver *maze = new solver(one);
+    
+    
 }
 
 
