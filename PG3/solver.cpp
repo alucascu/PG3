@@ -87,6 +87,7 @@ Move *solver::nextValidMove() {
 	char right = inputMaze->peek(inputMaze->rowPeek());
 	inputMaze->shiftRight();
 
+
 	if (down == ' ' && downDepth != inputMaze->getHeight()) {
 		validMoves->addNewOption(1);
 	}
