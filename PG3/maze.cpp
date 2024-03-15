@@ -10,7 +10,7 @@ maze::maze() {
 	width = stoi(mwidth);
 	height = stoi(mheight);
 
-	
+
 
 	grid = new queue<queue<char>*>;
 	for (int j = 0; j < height; j++) {
@@ -20,7 +20,6 @@ maze::maze() {
 	}
 	this->fillMaze();
 }
-
 maze::maze(int mWidth, int mHeight) {
 	width = mWidth;
 	height = mHeight;
@@ -33,10 +32,10 @@ maze::maze(int mWidth, int mHeight) {
 		temp = nullptr;
 	}
 }
-
 maze::~maze() {
 
 }
+
 
 void maze::print() {
 	queue<char>* temp;
@@ -44,24 +43,22 @@ void maze::print() {
 	cout << "------------------" << endl;
 	for (int i = 0; i < height; i++) {
 		temp = grid->pop();
+		cout << '|';
 		for (int j = 0; j < width; j++) {
 			character = temp->pop();
 			cout << character;
 			temp->push(character);
 		}
-		cout << endl;
+		cout << '|' << endl;
 		grid->push(temp);
 
 	}
 	cout << "----------------------" << endl;
 	temp = nullptr;
 }
-
-
 int maze::getHeight() {
 	return this->height;
 }
-
 int maze::getWidth() {
 	return this->width;
 }
@@ -87,7 +84,6 @@ void maze::fillMaze() {
 		temp = nullptr;
 	}
 }
-
 char maze::peek(queue<char>* row) {
 
 	char next = row->pop();
@@ -107,11 +103,9 @@ char maze::peek(queue<char>* row) {
 
 	return next;
 }
-
 char maze::rowPeekChar() {
 	return peek(this->rowBelowPeek());
 }
-
 queue<char>* maze::rowPeek() {
 	queue<char>* row = grid->pop();
 	grid->push(row);
@@ -121,7 +115,6 @@ queue<char>* maze::rowPeek() {
 	}
 	return row;
 }
-
 queue<char>* maze::rowBelowPeek() {
 	grid->push(grid->pop());
 	queue<char>* row = grid->pop();
@@ -135,19 +128,15 @@ queue<char>* maze::rowBelowPeek() {
 queue<char>* maze::rowPop() {
 	return grid->pop();
 }
-
 char maze::columnPop() {
 	return this->rowPeek()->pop();
 }
-
 void maze::columnPush(char letter) {
 	(this->rowPeek())->push(letter);
 }
-
 void maze::rowPush(queue<char>* row) {
 	grid->push(row);
 }
-
 void maze::shiftLeft() {
 	for (int i = 0; i < height; i++) {
 		queue<char>* temp = grid->pop();
@@ -157,7 +146,19 @@ void maze::shiftLeft() {
 
 
 }
-
+void maze::shiftRight() {
+	for (int j = 0; j < width - 1; j++) {
+		shiftLeft();
+	}
+}
+void maze::shiftUp() {
+	grid->push(grid->pop());
+}
+void maze::shiftDown() {
+	for (int i = 0; i < height - 1; i++) {
+		grid->push(grid->pop());
+	}
+}
 void maze::replaceWithLetter(queue<char>* row, char newLetter) {
 	row->pop();
 	row->push(newLetter);

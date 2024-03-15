@@ -12,11 +12,8 @@ Move::Move(int firstOption, int secondOption) {
 	moveList->push(firstOption);
 	moveList->push(secondOption);
 }
-
-
-
 Move::~Move() {
-
+	delete moveList;
 }
 void Move::addNewOption(int newOption) {
 	moveList->push(newOption);
@@ -28,7 +25,7 @@ int Move::getNextMove() {
 
 	return getCurrentMove();
 }
-int Move::getCurrentMove(){
+int Move::getCurrentMove() {
 	if (moveList->isEmpty()) {
 		return 0;
 	}
@@ -47,66 +44,79 @@ int Move::getCurrentMove(){
 
 
 
-solver::solver(maze *unsolvedMaze) {
+solver::solver(maze* unsolvedMaze) {
 	solution = new queue<Move*>;
+	shortestSolution = new queue<int>;
 	inputMaze = unsolvedMaze;
-	solvedMaze = new maze(inputMaze->getWidth(), inputMaze->getHeight());
-	undoneFlag = false;
 	solutionLength = 1;
+	shortestSolLength = inputMaze->getHeight() * inputMaze->getWidth();
 	rightDepth = 1;
 	downDepth = 1;
-	solve();
+	findShortestSolution();
 }
 solver::~solver() {
 	delete solution;
 	delete inputMaze;
-	delete solvedMaze;
 
 	solution = nullptr;
 	inputMaze = nullptr;
-	solvedMaze = nullptr;
 }
+
 
 void solver::solve() {
 	inputMaze->replaceWithLetter(inputMaze->rowPeek(), 'X');
 	while ((rightDepth != inputMaze->getWidth()) || (downDepth != inputMaze->getHeight())) {
-		inputMaze->print();
-		Move *nextMove = nextValidMove();
-		cout << "The solutionLength: " <<  solutionLength << endl;
+		//inputMaze->print();
+		Move* nextMove = nextValidMove();
+		//cout << "The solutionLength: " << solutionLength << endl;
 		tryCurrentMove(nextMove);
 	}
 	inputMaze->replaceWithLetter(inputMaze->rowPeek(), 'X');
 
 	inputMaze->shiftLeft();
-	inputMaze->rowPush(inputMaze->rowPop());
+	inputMaze->shiftUp();
+	cout << "\n\n\n The solved maze: " << endl;
 	inputMaze->print();
-	/*
-	for (int i = 0; i < solutionLength; i++) {
-		int move = solution->pop()->getCurrentMove();
-		if (move == 1)
-			cout << "Down" << endl;
-		else
-			cout << "Right" << endl;
-	}
-	*/
-	cout << "\n\n\n";
 
 }
-Move *solver::nextValidMove() {
-	Move *validMoves = new Move();
-	char down = inputMaze->rowPeekChar();
-	inputMaze->columnPush(inputMaze->columnPop());
+Move* solver::nextValidMove() {
+	Move* validMoves = new Move();
+
+
+	inputMaze->shiftUp();
+	char down = inputMaze->peek(inputMaze->rowPeek());
+	inputMaze->shiftDown();
+
+
+	inputMaze->shiftLeft();
 	char right = inputMaze->peek(inputMaze->rowPeek());
-	for(int i = 0; i < inputMaze->getWidth() - 1; i++)
-		inputMaze->columnPush(inputMaze->columnPop());
-	
+	inputMaze->shiftRight();
+
+
+	inputMaze->shiftRight();
+	char left = inputMaze->peek(inputMaze->rowPeek());
+	inputMaze->shiftLeft();
+
+
+	inputMaze->shiftDown();
+	char up = inputMaze->peek(inputMaze->rowPeek());
+	inputMaze->shiftUp();
+
 	if (down == ' ' && downDepth != inputMaze->getHeight()) {
 		validMoves->addNewOption(1);
-		cout << "Open Down and ";
+		cout << "Down ";
 	}
 	if (right == ' ' && rightDepth != inputMaze->getWidth()) {
 		validMoves->addNewOption(2);
-		cout << "Open Right";
+		cout << "Right ";
+	}
+	if (left == ' ' && rightDepth != 1) {
+		validMoves->addNewOption(3);
+		cout << "Left ";
+	}
+	if (up == ' ' && downDepth != 1) {
+		validMoves->addNewOption(4);
+		cout << "Up ";
 	}
 	cout << endl;
 	return validMoves;
@@ -114,38 +124,52 @@ Move *solver::nextValidMove() {
 }
 void solver::undoLastMove() {
 
-	Move *lastM = getLast();
+	Move* lastM = getLast();
 	int last = lastM->getCurrentMove();
 	if (last == 1) {
 		inputMaze->replaceWithLetter(inputMaze->rowPeek(), ' ');
-		for (int i = 0; i < inputMaze->getHeight() - 1; i++) {
-			inputMaze->rowPush(inputMaze->rowPop());
-		}
+		inputMaze->shiftDown();
 		solutionLength--;
-
 		downDepth--;
-
 	}
 	else if (last == 2) {
 		inputMaze->replaceWithLetter(inputMaze->rowPeek(), ' ');
-		for (int i = 0; i < (inputMaze->getWidth()-2); i++) {
-			inputMaze->shiftLeft();
-		}
+		inputMaze->shiftRight();
 		solutionLength--;
 		rightDepth--;
 	}
-	if (peekLast()->getNextMove() == 0 && solutionLength > 2) {
+	else if (last == 3) {
+		inputMaze->replaceWithLetter(inputMaze->rowPeek(), ' ');
+		inputMaze->shiftLeft();
+		solutionLength--;
+		rightDepth++;
+	}
+	else if (last == 4) {
+		inputMaze->replaceWithLetter(inputMaze->rowPeek(), ' ');
+		inputMaze->shiftUp();
+		solutionLength--;
+		downDepth++;
+	}
+	int lastMNext = lastM->getNextMove();
+	if (lastMNext == 0 && solutionLength != 1) {
 		undoLastMove();
 	}
-	cout << "Undid last move" << endl;
-	undoneFlag = true;
+	else if (lastMNext == 0 && solutionLength == 1) {
+		solutionLength = inputMaze->getWidth() * inputMaze->getHeight() + 3;
+		downDepth = inputMaze->getHeight();
+		rightDepth = inputMaze->getWidth();
 
-	inputMaze->print();
-	cout << endl;
+	}
+	else {
+		tryCurrentMove(lastM);
+
+	}
+
+
 
 
 }
-void solver::addMove(Move *newMove) {
+void solver::addMove(Move* newMove) {
 	solution->push(newMove);
 	solutionLength++;
 }
@@ -166,41 +190,116 @@ void solver::tryCurrentMove(Move* nextMove) {
 		solutionLength++;
 		solution->push(nextMove);
 	}
+	else if (move == 3 && rightDepth != 1) {
+		inputMaze->shiftRight();
+		inputMaze->replaceWithLetter(inputMaze->rowPeek(), 'X');
+		rightDepth--;
+		solutionLength++;
+		solution->push(nextMove);
+	}
+	else if (move == 4 && downDepth != 1) {
+		inputMaze->shiftDown();
+		inputMaze->replaceWithLetter(inputMaze->rowPeek(), 'X');
+		downDepth--;
+		solutionLength++;
+		solution->push(nextMove);
+	}
 
 	else {
 		undoLastMove();
-		tryCurrentMove(getLast());
+
 	}
 }
-void solver::tryNextMove(Move* nextMove) {
-	int move = nextMove->getNextMove();
-	solution->push(nextMove);
-	if (move == 2 && inputMaze->getWidth() != rightDepth && inputMaze->peek(inputMaze->rowPeek()) == ' ') {
+void solver::tryCurrentMove(int move) {
+	if (move == 1) {
 
+		inputMaze->shiftUp();
+		inputMaze->replaceWithLetter(inputMaze->rowPeek(), 'X');
+	}
+	else if (move == 2) {
 		inputMaze->shiftLeft();
 		inputMaze->replaceWithLetter(inputMaze->rowPeek(), 'X');
-		rightDepth++;
-		solutionLength++;
 	}
-	else{
-		undoLastMove();
-		solutionLength--;
+	else if (move == 3) {
+		inputMaze->shiftRight();
+		inputMaze->replaceWithLetter(inputMaze->rowPeek(), 'X');
+	}
+	else if (move == 4) {
+		inputMaze->shiftDown();
+		inputMaze->replaceWithLetter(inputMaze->rowPeek(), 'X');
+
 	}
 }
-
 Move* solver::getLast() {
-	
+
 	for (int i = 0; i < solutionLength - 2; i++)
 		solution->push(solution->pop());
 	return solution->pop();
 }
-
 Move* solver::peekLast() {
-	if (solution->isEmpty())
-		return new Move();
-	for (int i = 0; i < solutionLength; i++)
+
+	for (int i = 0; i < solutionLength - 2; i++)
 		solution->push(solution->pop());
 	Move* temp = solution->pop();
 	solution->push(temp);
 	return temp;
+}
+void solver::copyCurrentSolution() {
+	if (!shortestSolution->isEmpty()) {
+		while (!shortestSolution->isEmpty()) {
+			shortestSolution->pop();
+		}
+	}
+
+
+
+	queue<Move*>* tempS = new queue<Move*>;
+	int temp;
+ 	while(!solution->isEmpty()){
+		Move* current = solution->pop();
+
+		Move* solutionCopy = new Move();
+		shortestSolution->push(current->getCurrentMove());
+		while (current->getCurrentMove() != 0) {
+			int tempo = current->getCurrentMove();
+
+			solutionCopy->addNewOption(tempo);
+
+			current->getNextMove();
+		}
+		tempS->push(solutionCopy);
+
+	}
+	while (!tempS->isEmpty()) {
+		solution->push(tempS->pop());
+	}
+}
+
+void solver::executeSolution(queue<int>* sol) {
+	while (!sol->isEmpty()) {
+		//inputMaze->print();
+		//cout << "The solutionLength: " << solutionLength << endl;
+		int nextM = sol->pop();
+		tryCurrentMove(nextM);
+	}
+	inputMaze->replaceWithLetter(inputMaze->rowPeek(), 'X');
+
+	inputMaze->shiftLeft();
+	inputMaze->shiftUp();
+	cout << "\n\n\n The solved maze: " << endl;
+	inputMaze->print();
+}
+
+void solver::findShortestSolution() {
+	while (solutionLength != inputMaze->getWidth() * inputMaze->getHeight() + 3) {
+		solve();
+		if (solutionLength < shortestSolLength) {
+			copyCurrentSolution();
+			shortestSolLength = solutionLength;
+		}
+		inputMaze->shiftDown();
+		inputMaze->shiftRight();
+		undoLastMove();
+	}
+	executeSolution(shortestSolution);
 }

@@ -22,10 +22,12 @@ public:
 class solver {
 private:
 	queue<Move*> *solution;
+	queue<int>* shortestSolution;
 	maze *inputMaze;
 	maze *solvedMaze;
 	bool undoneFlag;
 	int solutionLength;
+	int shortestSolLength;
 	int rightDepth;
 	int downDepth;
 public:
@@ -36,8 +38,12 @@ public:
 	void addMove(Move *newMove); 
 	void undoLastMove();
 	Move* nextValidMove();
+	void copyCurrentSolution();
 	void tryNextMove(Move *nextMove);
 	void tryCurrentMove(Move* nextMove);
+	void tryCurrentMove(int move);
 	Move* getLast();
+	void executeSolution(queue<int> *sol);
 	Move* peekLast();
+	void findShortestSolution();
 };
