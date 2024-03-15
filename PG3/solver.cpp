@@ -75,8 +75,7 @@ void solver::solve() {
 
 	inputMaze->shiftLeft();
 	inputMaze->shiftUp();
-	cout << "\n\n\n The solved maze: " << endl;
-	inputMaze->print();
+
 
 }
 Move* solver::nextValidMove() {
@@ -104,67 +103,68 @@ Move* solver::nextValidMove() {
 
 	if (down == ' ' && downDepth != inputMaze->getHeight()) {
 		validMoves->addNewOption(1);
-		cout << "Down ";
 	}
 	if (right == ' ' && rightDepth != inputMaze->getWidth()) {
 		validMoves->addNewOption(2);
-		cout << "Right ";
 	}
 	if (left == ' ' && rightDepth != 1) {
 		validMoves->addNewOption(3);
-		cout << "Left ";
 	}
 	if (up == ' ' && downDepth != 1) {
 		validMoves->addNewOption(4);
-		cout << "Up ";
 	}
-	cout << endl;
+
 	return validMoves;
 
 }
 void solver::undoLastMove() {
+	if (solutionLength != 1) {
+		Move* lastM = getLast();
+		int last = lastM->getCurrentMove();
+		if (last == 1) {
+			inputMaze->replaceWithLetter(inputMaze->rowPeek(), ' ');
+			inputMaze->shiftDown();
+			solutionLength--;
+			downDepth--;
+		}
+		else if (last == 2) {
+			inputMaze->replaceWithLetter(inputMaze->rowPeek(), ' ');
+			inputMaze->shiftRight();
+			solutionLength--;
+			rightDepth--;
+		}
+		else if (last == 3) {
+			inputMaze->replaceWithLetter(inputMaze->rowPeek(), ' ');
+			inputMaze->shiftLeft();
+			solutionLength--;
+			rightDepth++;
+		}
+		else if (last == 4) {
+			inputMaze->replaceWithLetter(inputMaze->rowPeek(), ' ');
+			inputMaze->shiftUp();
+			solutionLength--;
+			downDepth++;
+		}
+		int lastMNext = lastM->getNextMove();
+		if (lastMNext == 0 && solutionLength != 1) {
+			undoLastMove();
+		}
+		else if (lastMNext == 0 && solutionLength == 1) {
+			solutionLength = inputMaze->getWidth() * inputMaze->getHeight() + 3;
+			downDepth = inputMaze->getHeight();
+			rightDepth = inputMaze->getWidth();
 
-	Move* lastM = getLast();
-	int last = lastM->getCurrentMove();
-	if (last == 1) {
-		inputMaze->replaceWithLetter(inputMaze->rowPeek(), ' ');
-		inputMaze->shiftDown();
-		solutionLength--;
-		downDepth--;
+		}
+		else {
+			tryCurrentMove(lastM);
+
+		}
 	}
-	else if (last == 2) {
-		inputMaze->replaceWithLetter(inputMaze->rowPeek(), ' ');
-		inputMaze->shiftRight();
-		solutionLength--;
-		rightDepth--;
-	}
-	else if (last == 3) {
-		inputMaze->replaceWithLetter(inputMaze->rowPeek(), ' ');
-		inputMaze->shiftLeft();
-		solutionLength--;
-		rightDepth++;
-	}
-	else if (last == 4) {
-		inputMaze->replaceWithLetter(inputMaze->rowPeek(), ' ');
-		inputMaze->shiftUp();
-		solutionLength--;
-		downDepth++;
-	}
-	int lastMNext = lastM->getNextMove();
-	if (lastMNext == 0 && solutionLength != 1) {
-		undoLastMove();
-	}
-	else if (lastMNext == 0 && solutionLength == 1) {
+	else {
 		solutionLength = inputMaze->getWidth() * inputMaze->getHeight() + 3;
 		downDepth = inputMaze->getHeight();
 		rightDepth = inputMaze->getWidth();
-
 	}
-	else {
-		tryCurrentMove(lastM);
-
-	}
-
 
 
 
@@ -276,30 +276,50 @@ void solver::copyCurrentSolution() {
 }
 
 void solver::executeSolution(queue<int>* sol) {
-	while (!sol->isEmpty()) {
-		//inputMaze->print();
-		//cout << "The solutionLength: " << solutionLength << endl;
-		int nextM = sol->pop();
-		tryCurrentMove(nextM);
-	}
-	inputMaze->replaceWithLetter(inputMaze->rowPeek(), 'X');
+	if (!sol->isEmpty()) {
+		while (!sol->isEmpty()) {
+			//inputMaze->print();
+			//cout << "The solutionLength: " << solutionLength << endl;
+			int nextM = sol->pop();
+			tryCurrentMove(nextM);
+		}
+		inputMaze->replaceWithLetter(inputMaze->rowPeek(), 'X');
 
-	inputMaze->shiftLeft();
-	inputMaze->shiftUp();
-	cout << "\n\n\n The solved maze: " << endl;
-	inputMaze->print();
+		inputMaze->shiftLeft();
+		inputMaze->shiftUp();
+		cout << "\n\n\n The shortest path through this maze: " << endl;
+		inputMaze->print();
+	}
+	else {
+		cout << "\n\n\n There is no valid path through this maze " << endl;
+		inputMaze->print();
+	}
 }
 
 void solver::findShortestSolution() {
+	int numSol = 0;
+	solve();
+	copyCurrentSolution();
+	shortestSolLength = solutionLength;
+	inputMaze->print();
+	inputMaze->shiftDown();
+	inputMaze->shiftRight();
 	while (solutionLength != inputMaze->getWidth() * inputMaze->getHeight() + 3) {
 		solve();
+		numSol++;
 		if (solutionLength < shortestSolLength) {
 			copyCurrentSolution();
 			shortestSolLength = solutionLength;
 		}
-		inputMaze->shiftDown();
-		inputMaze->shiftRight();
-		undoLastMove();
+		if (!solution->isEmpty()) {
+			inputMaze->print();
+			inputMaze->shiftDown();
+			inputMaze->shiftRight();
+			undoLastMove();
+		}
+
 	}
+	cout << "There are/is a total of " << numSol << " solution(s) to this maze" << endl;
 	executeSolution(shortestSolution);
+	cout << "This solution is " << shortestSolLength << " squares long" << endl;
 }
